@@ -1,6 +1,6 @@
 _extends: gh-config
 
 repository:
-  description: no desc
+  description: File-system Utilities
   homepage: https://blog.openacid.com
-  topics: tag1, tag2
+  topics: fs, file, dir

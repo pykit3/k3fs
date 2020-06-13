@@ -1,29 +1,33 @@
 """
-package-name is utility to create sub process.
+k3fs is collection of file-system operation utilities.
 
-Execute a shell script::
+Usage::
 
-    import pk3proc
+    >>> fwrite('/tmp/foo', "content")
 
-    # execute a shell script
+    >>> fread('/tmp/foo')
+    'content'
 
-    returncode, out, err = pk3proc.shell_script('ls / | grep bin')
-    print returncode
-    print out
-    # output:
-    # > 0
-    # > bin
-    # > sbin
-
-Run a command::
-
-    # Unlike the above snippet, following statement does not start an sh process.
-    returncode, out, err = pk3proc.command('ls', 'a*', cwd='/usr/local')
+    >>> 'foo' in ls_files('/tmp/')
+    True
 
 """
 
-# from .proc import CalledProcessError
-# from .proc import ProcError
+__version__ = "0.1.0"
+__name__ = "k3fs"
 
-__version__ = "0.2.2"
-_name = "pk3proc"
+from .fs import fread
+from .fs import fwrite
+from .fs import ls_dirs
+from .fs import ls_files
+from .fs import makedirs
+from .fs import remove
+
+__all__ = [
+    "ls_dirs",
+    "ls_files",
+    "makedirs",
+    "fread",
+    "fwrite",
+    "remove",
+]
