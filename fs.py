@@ -69,18 +69,19 @@ def makedirs(*paths, **kwargs):
         raise last_err
 
 
-def ls_dirs(path):
+def ls_dirs(*paths):
     """
-    Get sorted sub directories of `path`.
+    Get sorted sub directories of `paths`.
 
     Args:
-        path(str):
+        paths:
             is the directory path.
 
     Returns:
         list: of all sub directory names.
     """
 
+    path = os.path.join(*paths)
     files = os.listdir(path)
 
     sub_dirs = []
@@ -93,13 +94,13 @@ def ls_dirs(path):
     return sub_dirs
 
 
-def ls_files(path, pattern='.*'):
+def ls_files(*paths, pattern='.*'):
     """
     List all files that match `pattern` in `path`.
 
     Args:
 
-        path(str):
+        paths:
             is a directory path.
 
         pattern(str):
@@ -109,6 +110,7 @@ def ls_files(path, pattern='.*'):
         list: of sorted file names.
     """
 
+    path = os.path.join(*paths)
     fns = os.listdir(path)
 
     pt = re.compile(pattern)
@@ -121,13 +123,13 @@ def ls_files(path, pattern='.*'):
     return fns
 
 
-def fread(path, mode=''):
+def fread(*paths, mode=''):
     """
     Read and return the entire file specified by `path`
 
     Args:
 
-        path(str):
+        paths:
             is the path of the file to read.
 
         mode(str):
@@ -137,21 +139,21 @@ def fread(path, mode=''):
     Returns:
         file content in string or bytes.
     """
+    path = os.path.join(*paths)
     with open(path, 'r' + mode) as f:
         return f.read()
 
 
-def fwrite(path, fcont, uid=None, gid=None, atomic=False, fsync=True):
+def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     """
     Write `fcont` into file `path`.
 
     Args
 
-        path(str):
-            is the file path to write to.
-
-        fcont:
-            specifies the content to write.
+        paths_content:
+            is the file path to write to and the content to write.
+            The last elt is content, e.g.:
+            `fwrite('/tmp', 'foo', 'bar')` write 'bar' into file '/tmp/foo'.
 
         uid:
             specifies the user_id the file belongs to.
@@ -176,6 +178,8 @@ def fwrite(path, fcont, uid=None, gid=None, atomic=False, fsync=True):
 
     """
 
+    fcont = paths_content[-1]
+    path = os.path.join(*paths_content[:-1])
     if not atomic:
         return _write_file(path, fcont, uid, gid, fsync)
 
@@ -208,13 +212,13 @@ def _write_file(path, fcont, uid=None, gid=None, fsync=True):
         os.chown(path, uid, gid)
 
 
-def remove(path, onerror=None):
+def remove(*paths, onerror=None):
     """
     Recursively delete `path`, the `path` is *file*, *directory* or *symbolic link*.
 
     Args:
 
-        path(str):
+        paths:
             is the path to remove.
 
         onerror(str or callable):
@@ -225,6 +229,8 @@ def remove(path, onerror=None):
                 exc_info)` where func is *os.listdir*, *os.remove*, *os.rmdir*
                 or *os.path.isdir*.
     """
+
+    path = os.path.join(*paths)
 
     if onerror is None:
         onerror = 'raise'

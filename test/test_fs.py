@@ -65,12 +65,16 @@ class TestFS(unittest.TestCase):
         k3fs.makedirs(fn, uid=1, gid=1)
 
     def test_ls_dirs(self):
-        k3fs.makedirs('test_dir/sub_dir1')
+        k3fs.makedirs('test_dir/sub_dir1/foo')
         k3fs.makedirs('test_dir/sub_dir2')
         k3fs.fwrite('test_dir/test_file', 'foo')
 
         sub_dirs = k3fs.ls_dirs('test_dir')
         self.assertListEqual(['sub_dir1', 'sub_dir2'], sub_dirs)
+
+        # test multi path segment
+        sub_dirs = k3fs.ls_dirs('test_dir', 'sub_dir1')
+        self.assertListEqual(['foo'], sub_dirs)
 
         k3fs.remove('test_dir')
 
@@ -89,6 +93,9 @@ class TestFS(unittest.TestCase):
 
         self.assertEqual(['bar', 'foo'], k3fs.ls_files('test_dir/foo_dir'))
         self.assertEqual(['bar'], k3fs.ls_files('test_dir/foo_dir', pattern='^b'))
+
+        # test multi path segments
+        self.assertEqual(['bar', 'foo'], k3fs.ls_files('test_dir', 'foo_dir'))
 
         k3fs.remove('test_dir')
 
@@ -113,8 +120,15 @@ class TestFS(unittest.TestCase):
         force_remove(fn)
 
         dd('write/read file')
-        k3fs.fwrite(fn, '123')
+        k3fs.fwrite(fn, 'bar')
+        self.assertEqual('bar', k3fs.fread(fn))
+
+        # write with multi path segment
+        k3fs.fwrite('/tmp', 'pykit-ut-rw-file', '123')
         self.assertEqual('123', k3fs.fread(fn))
+
+        # read with multi path segment
+        self.assertEqual('123', k3fs.fread('/tmp', 'pykit-ut-rw-file'))
 
         self.assertEqual(b'123', k3fs.fread(fn, mode='b'))
 
@@ -224,13 +238,21 @@ class TestFS(unittest.TestCase):
 
     def test_remove_normal_file(self):
 
-        fn = '/tmp/pykit-ut-k3fs-remove-file-normal'
+        f = 'pykit-ut-k3fs-remove-file-normal'
+        fn = '/tmp/' + f
         force_remove(fn)
 
         k3fs.fwrite(fn, '', atomic=True)
         self.assertTrue(os.path.isfile(fn))
 
         k3fs.remove(fn)
+        self.assertFalse(os.path.exists(fn))
+
+        k3fs.fwrite('/tmp', f, '', atomic=True)
+        self.assertTrue(os.path.isfile(fn))
+
+        # remove with multi path segments
+        k3fs.remove('/tmp', f)
         self.assertFalse(os.path.exists(fn))
 
     def test_remove_link_file(self):

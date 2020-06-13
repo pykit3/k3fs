@@ -13,7 +13,7 @@ Usage::
 
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __name__ = "k3fs"
 
 from .fs import fread
