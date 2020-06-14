@@ -6,8 +6,8 @@ import os
 import re
 import sys
 
+import time
 import k3confloader
-import k3time
 
 
 def makedirs(*paths, **kwargs):
@@ -169,7 +169,7 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
 
             Write fcont to a temporary file, then rename to the path.
             The temporary file names of same path in one process distinguish with
-            `k3time.ns()`, it is not atomic if the temporary files of same path
+            nanosecond, it is not atomic if the temporary files of same path
             created at the same nanosecond.
             The renaming will be an atomic operation (this is a POSIX requirement).
 
@@ -186,7 +186,7 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     tmp_path = '{path}._tmp_.{pid}_{timestamp}'.format(
         path=path,
         pid=os.getpid(),
-        timestamp=k3time.ns(),
+        timestamp=int(time.time() * (1000 ** 3)),
     )
     _write_file(tmp_path, fcont, uid, gid, fsync)
 
