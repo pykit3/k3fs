@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name="k3fs",
     packages=["k3fs"],
-    version="0.1.4",
+    version="0.1.5",
     license='MIT',
     description='File-system Utilities',
     long_description='# k3fs\n\n[![Build Status](https://travis-ci.com/pykit3/k3fs.svg?branch=master)](https://travis-ci.com/pykit3/k3fs)\n[![Documentation Status](https://readthedocs.org/projects/k3fs/badge/?version=stable)](https://k3fs.readthedocs.io/en/stable/?badge=stable)\n[![Package](https://img.shields.io/pypi/pyversions/k3fs)](https://pypi.org/project/k3fs)\n\nFile-system Utilities\n\nk3fs is a component of [pykit3] project: a python3 toolkit set.\n\n\n# Install\n\n```\npip install k3fs\n```\n\n# Synopsis\n\n```python\n>>> fwrite(\'/tmp/foo\', "content")\n\n>>> fread(\'/tmp/foo\')\n\'content\'\n>>> \'foo\' in ls_files(\'/tmp/\')\nTrue\n```\n\n#   Author\n\nZhang Yanpo (张炎泼) <drdr.xp@gmail.com>\n\n#   Copyright and License\n\nThe MIT License (MIT)\n\nCopyright (c) 2015 Zhang Yanpo (张炎泼) <drdr.xp@gmail.com>\n\n\n[pykit3]: https://github.com/pykit3',
