@@ -47,10 +47,23 @@ def get_examples(pkg):
         rst.append('>>> ' + e.source.strip())
         rst.append(e.want.strip())
 
-    return '\n'.join(rst)
+    rst = '\n'.join(rst)
+
+    for fn in ("synopsis.txt",
+               "synopsis.py",
+               ):
+        try:
+            with open(fn, 'r') as f:
+                rst += '\n' + f.read()
+
+        except FileNotFoundError:
+            pass
+
+    return rst
 
 
 j2vars['synopsis'] = get_examples(pkg)
+j2vars['package_doc'] = pkg.__doc__
 
 
 def render_j2(tmpl_path, tmpl_vars, output_path):
