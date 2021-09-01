@@ -1,14 +1,207 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import binascii
+import hashlib
 import errno
 import os
 import re
 import sys
+import psutil
 
 import time
 import k3confloader
 
+READ_BLOCK = 32 * 1024 * 1024
+WRITE_BLOCK = 32 * 1024 * 1024
+
+
+class FSUtilError(Exception):
+    pass
+
+
+class NotMountPoint(FSUtilError):
+    pass
+
+
+def assert_mountpoint(path):
+    """
+    Ensure that `path` must be a **mount point**.
+    Or an error `NotMountPoint` is emitted.
+    :param path: is a path that does have to be an existent file path.
+    :return: Nothing
+    """
+    if not os.path.ismount(path):
+        raise NotMountPoint(path)
+
+
+def get_all_mountpoint(all=False):
+    """
+    Returns a list of all mount points on this host.
+    :param all: specifies if to return non-physical device mount points.
+    :return: By default it is `False` thus only disk drive mount points are returned.
+    `tmpfs` or `/proc` are not returned by default.
+    """
+    partitions = psutil.disk_partitions(all=all)
+    prt_by_mp = [x.mountpoint for x in partitions]
+    return prt_by_mp
+
+
+def get_mountpoint(path):
+    """
+    Return the mount point where this `path` resides on.
+    All symbolic links are resolved when looking up for mount point.
+    :param path: is a path that does have to be an existent file path.
+    :return: the mount point path(one of output of command `mount` on linux)
+    """
+    path = os.path.realpath(path)
+
+    prt_by_mountpoint = get_disk_partitions()
+
+    while path != '/' and path not in prt_by_mountpoint:
+        path = os.path.dirname(path)
+
+    return path
+
+
+def get_device(path):
+    """
+    Get the device path(`/dev/sdb` etc) where `path` resides on.
+    :param path: is a path that does have to be an existent file path.
+    :return: device path like `"/dev/sdb"` in string.
+    """
+
+    prt_by_mountpoint = get_disk_partitions()
+
+    mp = get_mountpoint(path)
+
+    return prt_by_mountpoint[mp]['device']
+
+
+def get_device_fs(device):
+    """
+    Return the file-system name of a device, if the device is a disk device.
+    :param device: is a path of a device, such as `/dev/sdb1`.
+    :return: the file-system name, such as `ext4` or `hfs`.
+    """
+    prt_by_mp = get_disk_partitions()
+
+    for prt in list(prt_by_mp.values()):
+        if device == prt['device']:
+            return prt['fstype']
+    else:
+        return 'unknown'
+
+
+def get_disk_partitions(all=True):
+    """
+    Find and return all mounted path and its mount point information in a
+    dictionary.
+    :param all:  By default it is `True` thus all mount points including non-disk path are also returned,
+    otherwise `tmpfs` or `/proc` are not returned.
+    :return: an dictionary indexed by mount point path:
+    """
+    # {
+    #     '/': {'device': '/dev/disk1',
+    #           'fstype': 'hfs',
+    #           'mountpoint': '/',
+    #           'opts': 'rw,local,rootfs,dovolfs,journaled,multilabel'},
+    #     '/dev': {'device': 'devfs',
+    #              'fstype': 'devfs',
+    #              'mountpoint': '/dev',
+    #              'opts': 'rw,local,dontbrowse,multilabel'},
+    #     '/home': {'device': 'map auto_home',
+    #               'fstype': 'autofs',
+    #               'mountpoint': '/home',
+    #               'opts': 'rw,dontbrowse,automounted,multilabel'},
+    #     '/net': {'device': 'map -hosts',
+    #              'fstype': 'autofs',
+    #              'mountpoint': '/net',
+    #              'opts': 'rw,nosuid,dontbrowse,automounted,multilabel'}
+    # }
+    partitions = psutil.disk_partitions(all=all)
+
+    by_mount_point = {}
+    for pt in partitions:
+        # OrderedDict([
+        #      ('device', '/dev/disk1'),
+        #      ('mountpoint', '/'),
+        #      ('fstype', 'hfs'),
+        #      ('opts', 'rw,local,rootfs,dovolfs,journaled,multilabel')])
+        by_mount_point[pt.mountpoint] = _to_dict(pt)
+
+    return by_mount_point
+
+
+def get_path_fs(path):
+    """
+    Return the name of device where the `path` is mounted.
+    :param path: is a file path on a file system.
+    :return: the file-system name, such as `ext4` or `hfs`.
+    """
+    mp = get_mountpoint(path)
+    prt_by_mp = get_disk_partitions()
+
+    return prt_by_mp[mp]['fstype']
+
+
+def get_path_usage(path):
+    """
+    Collect space usage information of the file system `path` is mounted on.
+    :param path: specifies the fs-path to collect usage info. Such as `/tmp` or `/home/alice`.
+    :return:
+    a dictionary in the following format:
+    {
+        'total':     total space in byte,
+        'used':      used space in byte(includes space reserved for super user),
+        'available': total - used,
+        'percent':   float(used) / 'total',
+    }
+    """
+    space_st = os.statvfs(path)
+
+    # f_bavail: without blocks reserved for super users
+    # f_bfree:  with    blocks reserved for super users
+    avail = space_st.f_frsize * space_st.f_bavail
+
+    capa = space_st.f_frsize * space_st.f_blocks
+    used = capa - avail
+
+    return {
+        'total': capa,
+        'used': used,
+        'available': avail,
+        'percent': float(used) / capa,
+    }
+
+
+def get_path_inode_usage(path):
+    """
+    Collect inode usage information of the file system `path` is mounted on.
+    :param path: specifies the fs - path to collect usage info.
+    Such as `/tmp` or `/home/alice`.
+    :return: a dictionary in the following format:
+    """
+    # ```json
+    # {
+    #     'total':     total number of inode,
+    # 'used':      used inode(includes inode reserved for super user),
+    # 'available': total - used,
+    #              'percent':   float(used) / 'total'
+    # }
+    # ```
+    inode_st = os.statvfs(path)
+
+    available = inode_st.f_favail
+    total = inode_st.f_files
+    used = total - available
+
+    return {
+        'total': total,
+        'used': used,
+        'available': available,
+        'percent': float(used) / total,
+    }
 
 def makedirs(*paths, **kwargs):
     """
@@ -283,3 +476,67 @@ def remove(*paths, onerror=None):
             pass
         else:
             onerror(os.rmdir, path, sys.exc_info())
+
+def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False,
+                   block_size=READ_BLOCK, io_limit=READ_BLOCK):
+
+    checksums = {
+        'sha1': None,
+        'md5': None,
+        'crc32': None,
+        'sha256': None
+    }
+
+    if (sha1 or md5 or crc32 or sha256) is False:
+        return checksums
+
+    if block_size <= 0:
+        raise FSUtilError('block_size must be positive integer')
+
+    if io_limit == 0:
+        raise FSUtilError('io_limit shoud not be zero')
+
+    min_io_time = float(block_size) / io_limit
+
+    sum_sha1 = hashlib.sha1()
+    sum_md5 = hashlib.md5()
+    sum_crc32 = 0
+    sum_sha256 = hashlib.sha256()
+
+    with open(path, 'rb') as f_path:
+
+        while True:
+            t0 = time.time()
+
+            buf = f_path.read(block_size)
+            if len(buf) == 0:
+                break
+
+            t1 = time.time()
+
+            time_sleep = max(0, min_io_time - (t1 - t0))
+            if time_sleep > 0:
+                time.sleep(time_sleep)
+
+            if sha1:
+                sum_sha1.update(buf)
+            if md5:
+                sum_md5.update(buf)
+            if crc32:
+                sum_crc32 = binascii.crc32(buf, sum_crc32)
+            if sha256:
+                sum_sha256.update(buf)
+
+    if sha1:
+        checksums['sha1'] = sum_sha1.hexdigest()
+    if md5:
+        checksums['md5'] = sum_md5.hexdigest()
+    if crc32:
+        checksums['crc32'] = '%08x' % (sum_crc32 & 0xffffffff)
+    if sha256:
+        checksums['sha256'] = sum_sha256.hexdigest()
+
+    return checksums
+
+def _to_dict(_namedtuple):
+    return dict(_namedtuple._asdict())

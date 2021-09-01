@@ -13,17 +13,44 @@ Usage::
 
 """
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 __name__ = "k3fs"
+from .fs import (
+    FSUtilError,
+    NotMountPoint,
 
-from .fs import fread
-from .fs import fwrite
-from .fs import ls_dirs
-from .fs import ls_files
-from .fs import makedirs
-from .fs import remove
+    assert_mountpoint,
+    calc_checksums,
+    get_all_mountpoint,
+    get_device,
+    get_device_fs,
+    get_disk_partitions,
+    get_mountpoint,
+    get_path_fs,
+    get_path_inode_usage,
+    get_path_usage,
 
+    fread,
+    fwrite,
+    ls_dirs,
+    ls_files,
+    makedirs,
+    remove,
+)
 __all__ = [
+    "FSUtilError",
+    "NotMountPoint",
+    "assert_mountpoint",
+    "calc_checksums",
+    "get_all_mountpoint",
+    "get_device",
+    "get_device_fs",
+    "get_disk_partitions",
+    "get_mountpoint",
+    "get_path_fs",
+    "get_path_inode_usage",
+    "get_path_usage",
+
     "ls_dirs",
     "ls_files",
     "makedirs",
