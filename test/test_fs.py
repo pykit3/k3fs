@@ -245,7 +245,7 @@ class TestFS(unittest.TestCase):
         force_remove(fn)
 
         rc, out, err = k3proc.shell_script(pyt + ' ' + this_base + '/makedirs_with_config.py ' + fn,
-                                           env=dict(PYTHONPATH=this_base + ':' + os.environ.get('PYTHONPATH'),
+                                           env=dict(PYTHONPATH=this_base + ':' + os.environ.get('PYTHONPATH', ''),
                                                     PATH=os.environ.get('PATH'))
                                            )
 
@@ -292,7 +292,7 @@ class TestFS(unittest.TestCase):
         force_remove(fn)
 
         rc, out, err = k3proc.shell_script(pyt + ' ' + this_base + '/write_with_config.py ' + fn,
-                                           env=dict(PYTHONPATH=this_base + ':' + os.environ.get('PYTHONPATH'))
+                                           env=dict(PYTHONPATH=this_base + ':' + os.environ.get('PYTHONPATH', ''))
                                            )
 
         dd('run write_with_config.py: ', rc, out, err)
