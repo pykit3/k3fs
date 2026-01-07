@@ -13,12 +13,12 @@ Usage::
 
 """
 
-__version__ = "0.1.6"
-__name__ = "k3fs"
+from importlib.metadata import version
+
+__version__ = version("k3fs")
 from .fs import (
     FSUtilError,
     NotMountPoint,
-
     assert_mountpoint,
     calc_checksums,
     get_all_mountpoint,
@@ -29,7 +29,6 @@ from .fs import (
     get_path_fs,
     get_path_inode_usage,
     get_path_usage,
-
     fread,
     fwrite,
     ls_dirs,
@@ -37,6 +36,7 @@ from .fs import (
     makedirs,
     remove,
 )
+
 __all__ = [
     "FSUtilError",
     "NotMountPoint",
@@ -50,7 +50,6 @@ __all__ = [
     "get_path_fs",
     "get_path_inode_usage",
     "get_path_usage",
-
     "ls_dirs",
     "ls_files",
     "makedirs",

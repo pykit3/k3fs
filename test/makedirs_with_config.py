@@ -7,4 +7,4 @@ fn = sys.argv[1]
 
 k3fs.makedirs(fn)
 stat = os.stat(fn)
-os.write(1, '{uid},{gid}'.format(uid=stat.st_uid, gid=stat.st_gid).encode('utf-8'))
+os.write(1, "{uid},{gid}".format(uid=stat.st_uid, gid=stat.st_gid).encode("utf-8"))

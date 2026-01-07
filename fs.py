@@ -58,7 +58,7 @@ def get_mountpoint(path):
 
     prt_by_mountpoint = get_disk_partitions()
 
-    while path != '/' and path not in prt_by_mountpoint:
+    while path != "/" and path not in prt_by_mountpoint:
         path = os.path.dirname(path)
 
     return path
@@ -75,7 +75,7 @@ def get_device(path):
 
     mp = get_mountpoint(path)
 
-    return prt_by_mountpoint[mp]['device']
+    return prt_by_mountpoint[mp]["device"]
 
 
 def get_device_fs(device):
@@ -87,10 +87,10 @@ def get_device_fs(device):
     prt_by_mp = get_disk_partitions()
 
     for prt in list(prt_by_mp.values()):
-        if device == prt['device']:
-            return prt['fstype']
+        if device == prt["device"]:
+            return prt["fstype"]
     else:
-        return 'unknown'
+        return "unknown"
 
 
 def get_disk_partitions(all=True):
@@ -142,7 +142,7 @@ def get_path_fs(path):
     mp = get_mountpoint(path)
     prt_by_mp = get_disk_partitions()
 
-    return prt_by_mp[mp]['fstype']
+    return prt_by_mp[mp]["fstype"]
 
 
 def get_path_usage(path):
@@ -168,10 +168,10 @@ def get_path_usage(path):
     used = capa - avail
 
     return {
-        'total': capa,
-        'used': used,
-        'available': avail,
-        'percent': float(used) / capa,
+        "total": capa,
+        "used": used,
+        "available": avail,
+        "percent": float(used) / capa,
     }
 
 
@@ -197,11 +197,12 @@ def get_path_inode_usage(path):
     used = total - available
 
     return {
-        'total': total,
-        'used': used,
-        'available': available,
-        'percent': float(used) / total,
+        "total": total,
+        "used": used,
+        "available": available,
+        "percent": float(used) / total,
     }
+
 
 def makedirs(*paths, **kwargs):
     """
@@ -231,18 +232,16 @@ def makedirs(*paths, **kwargs):
             or having other issue like permission denied.
     """
 
-    mode = kwargs.get('mode', 0o755)
-    uid = kwargs.get('uid') or k3confloader.conf.uid
-    gid = kwargs.get('gid') or k3confloader.conf.gid
+    mode = kwargs.get("mode", 0o755)
+    uid = kwargs.get("uid") or k3confloader.conf.uid
+    gid = kwargs.get("gid") or k3confloader.conf.gid
 
     path = os.path.join(*paths)
     last_err = None
 
     # retry to deal with concurrent check-and-then-set issue
     for _ in range(2):
-
         if os.path.isdir(path):
-
             if uid is not None and gid is not None:
                 os.chown(path, uid, gid)
 
@@ -287,7 +286,7 @@ def ls_dirs(*paths):
     return sub_dirs
 
 
-def ls_files(*paths, pattern='.*'):
+def ls_files(*paths, pattern=".*"):
     """
     List all files that match `pattern` in `path`.
 
@@ -308,15 +307,12 @@ def ls_files(*paths, pattern='.*'):
 
     pt = re.compile(pattern)
 
-    fns = sorted([x for x in fns
-                  if re.search(pt, x) is not None
-                  and os.path.isfile(os.path.join(path, x))
-                  ])
+    fns = sorted([x for x in fns if re.search(pt, x) is not None and os.path.isfile(os.path.join(path, x))])
 
     return fns
 
 
-def fread(*paths, mode=''):
+def fread(*paths, mode=""):
     """
     Read and return the entire file specified by `path`
 
@@ -333,7 +329,7 @@ def fread(*paths, mode=''):
         file content in string or bytes.
     """
     path = os.path.join(*paths)
-    with open(path, 'r' + mode) as f:
+    with open(path, "r" + mode) as f:
         return f.read()
 
 
@@ -376,10 +372,10 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     if not atomic:
         return _write_file(path, fcont, uid, gid, fsync)
 
-    tmp_path = '{path}._tmp_.{pid}_{timestamp}'.format(
+    tmp_path = "{path}._tmp_.{pid}_{timestamp}".format(
         path=path,
         pid=os.getpid(),
-        timestamp=int(time.time() * (1000 ** 3)),
+        timestamp=int(time.time() * (1000**3)),
     )
     _write_file(tmp_path, fcont, uid, gid, fsync)
 
@@ -391,11 +387,10 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
 
 
 def _write_file(path, fcont, uid=None, gid=None, fsync=True):
-
     uid = uid or k3confloader.conf.uid
     gid = gid or k3confloader.conf.gid
 
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         f.write(fcont)
         f.flush()
         if fsync:
@@ -426,14 +421,14 @@ def remove(*paths, onerror=None):
     path = os.path.join(*paths)
 
     if onerror is None:
-        onerror = 'raise'
+        onerror = "raise"
 
     try:
         is_dir = os.path.isdir(path)
     except os.error as e:
-        if onerror == 'raise':
+        if onerror == "raise":
             raise e
-        elif onerror == 'ignore':
+        elif onerror == "ignore":
             pass
         else:
             onerror(os.path.isdir, path, sys.exc_info())
@@ -444,9 +439,9 @@ def remove(*paths, onerror=None):
         try:
             os.remove(path)
         except os.error as e:
-            if onerror == 'raise':
+            if onerror == "raise":
                 raise e
-            elif onerror == 'ignore':
+            elif onerror == "ignore":
                 pass
             else:
                 onerror(os.remove, path, sys.exc_info())
@@ -456,9 +451,9 @@ def remove(*paths, onerror=None):
     try:
         names = os.listdir(path)
     except os.error as e:
-        if onerror == 'raise':
+        if onerror == "raise":
             raise e
-        elif onerror == 'ignore':
+        elif onerror == "ignore":
             pass
         else:
             onerror(os.listdir, path, sys.exc_info())
@@ -470,31 +465,25 @@ def remove(*paths, onerror=None):
     try:
         os.rmdir(path)
     except os.error as e:
-        if onerror == 'raise':
+        if onerror == "raise":
             raise e
-        elif onerror == 'ignore':
+        elif onerror == "ignore":
             pass
         else:
             onerror(os.rmdir, path, sys.exc_info())
 
-def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False,
-                   block_size=READ_BLOCK, io_limit=READ_BLOCK):
 
-    checksums = {
-        'sha1': None,
-        'md5': None,
-        'crc32': None,
-        'sha256': None
-    }
+def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False, block_size=READ_BLOCK, io_limit=READ_BLOCK):
+    checksums = {"sha1": None, "md5": None, "crc32": None, "sha256": None}
 
     if (sha1 or md5 or crc32 or sha256) is False:
         return checksums
 
     if block_size <= 0:
-        raise FSUtilError('block_size must be positive integer')
+        raise FSUtilError("block_size must be positive integer")
 
     if io_limit == 0:
-        raise FSUtilError('io_limit shoud not be zero')
+        raise FSUtilError("io_limit shoud not be zero")
 
     min_io_time = float(block_size) / io_limit
 
@@ -503,8 +492,7 @@ def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False,
     sum_crc32 = 0
     sum_sha256 = hashlib.sha256()
 
-    with open(path, 'rb') as f_path:
-
+    with open(path, "rb") as f_path:
         while True:
             t0 = time.time()
 
@@ -528,15 +516,16 @@ def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False,
                 sum_sha256.update(buf)
 
     if sha1:
-        checksums['sha1'] = sum_sha1.hexdigest()
+        checksums["sha1"] = sum_sha1.hexdigest()
     if md5:
-        checksums['md5'] = sum_md5.hexdigest()
+        checksums["md5"] = sum_md5.hexdigest()
     if crc32:
-        checksums['crc32'] = '%08x' % (sum_crc32 & 0xffffffff)
+        checksums["crc32"] = "%08x" % (sum_crc32 & 0xFFFFFFFF)
     if sha256:
-        checksums['sha256'] = sum_sha256.hexdigest()
+        checksums["sha256"] = sum_sha256.hexdigest()
 
     return checksums
+
 
 def _to_dict(_namedtuple):
     return dict(_namedtuple._asdict())

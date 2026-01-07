@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k3fs"
+version = "0.1.6"
+description = "File-system utilities for reading, writing, and directory operations"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    { name = "Zhang Yanpo", email = "drdr.xp@gmail.com" }
+]
+keywords = ["fs", "file", "directory", "filesystem"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "psutil",
+    "k3confloader",
+]
+
+[project.urls]
+Homepage = "https://github.com/pykit3/k3fs"
+Documentation = "https://k3fs.readthedocs.io"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff",
+    "coverage",
+]
+publish = [
+    "build",
+    "twine",
+    "pk3",
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.24",
+]
+
+[tool.setuptools]
+packages = ["k3fs"]
+
+[tool.setuptools.package-dir]
+k3fs = "."
+
+[tool.ruff]
+line-length = 120
