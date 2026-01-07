@@ -24,7 +24,7 @@ jobs:
           pip install pytest k3ut k3confloader k3proc k3thread k3num psutil
           pip install -e .
       - name: Test with pytest
-        run: pytest -v
+        run: sudo env "PATH=$PATH" pytest -v
 
   build_doc:
     runs-on: ubuntu-latest
