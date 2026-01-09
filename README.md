@@ -1,6 +1,6 @@
 # k3fs
 
-[![Build Status](https://travis-ci.com/pykit3/k3fs.svg?branch=master)](https://travis-ci.com/pykit3/k3fs)
+[![Build Status](https://github.com/pykit3/k3fs/actions/workflows/python-package.yml/badge.svg)](https://github.com/pykit3/k3fs/actions/workflows/python-package.yml)
 [![Documentation Status](https://readthedocs.org/projects/k3fs/badge/?version=stable)](https://k3fs.readthedocs.io/en/stable/?badge=stable)
 [![Package](https://img.shields.io/pypi/pyversions/k3fs)](https://pypi.org/project/k3fs)
 
