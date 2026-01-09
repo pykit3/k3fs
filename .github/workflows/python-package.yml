@@ -7,4 +7,6 @@ on:
 jobs:
   ci:
     uses: pykit3/pk3/.github/workflows/python-package-reusable.yml@master
+    with:
+      privileged: true
 
