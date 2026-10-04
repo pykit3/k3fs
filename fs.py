@@ -1,16 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import binascii
-import hashlib
 import errno
+import hashlib
 import os
 import re
 import sys
-import psutil
-
 import time
+
 import k3confloader
+import psutil
 
 READ_BLOCK = 32 * 1024 * 1024
 WRITE_BLOCK = 32 * 1024 * 1024
@@ -89,8 +86,7 @@ def get_device_fs(device):
     for prt in list(prt_by_mp.values()):
         if device == prt["device"]:
             return prt["fstype"]
-    else:
-        return "unknown"
+    return "unknown"
 
 
 def get_disk_partitions(all=True):
@@ -257,8 +253,7 @@ def makedirs(*paths, **kwargs):
                 # concurrent if-exist and makedirs
             else:
                 raise
-    else:
-        raise last_err
+    raise last_err
 
 
 def ls_dirs(*paths):
@@ -372,16 +367,12 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     if not atomic:
         return _write_file(path, fcont, uid, gid, fsync)
 
-    tmp_path = "{path}._tmp_.{pid}_{timestamp}".format(
-        path=path,
-        pid=os.getpid(),
-        timestamp=int(time.time() * (1000**3)),
-    )
+    tmp_path = f"{path}._tmp_.{os.getpid()}_{int(time.time() * (1000**3))}"
     _write_file(tmp_path, fcont, uid, gid, fsync)
 
     try:
         os.rename(tmp_path, path)
-    except EnvironmentError:
+    except OSError:
         os.remove(tmp_path)
         raise
 
@@ -425,9 +416,9 @@ def remove(*paths, onerror=None):
 
     try:
         is_dir = os.path.isdir(path)
-    except os.error as e:
+    except OSError:
         if onerror == "raise":
-            raise e
+            raise
         elif onerror == "ignore":
             pass
         else:
@@ -438,9 +429,9 @@ def remove(*paths, onerror=None):
     if not is_dir:
         try:
             os.remove(path)
-        except os.error as e:
+        except OSError:
             if onerror == "raise":
-                raise e
+                raise
             elif onerror == "ignore":
                 pass
             else:
@@ -450,9 +441,9 @@ def remove(*paths, onerror=None):
     names = []
     try:
         names = os.listdir(path)
-    except os.error as e:
+    except OSError:
         if onerror == "raise":
-            raise e
+            raise
         elif onerror == "ignore":
             pass
         else:
@@ -464,9 +455,9 @@ def remove(*paths, onerror=None):
 
     try:
         os.rmdir(path)
-    except os.error as e:
+    except OSError:
         if onerror == "raise":
-            raise e
+            raise
         elif onerror == "ignore":
             pass
         else:

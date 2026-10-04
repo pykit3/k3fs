@@ -1,15 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import os
 import time
 import unittest
 
-import k3fs
+import k3num
 import k3proc
 import k3thread
 import k3ut
-import k3num
+
+import k3fs
 
 dd = k3ut.dd
 
@@ -33,7 +31,7 @@ class TestFS(unittest.TestCase):
         dd("all mount points:", mps)
 
         self.assertTrue(len(mpsall) > len(mps))
-        self.assertEqual(set([]), set(mps) - set(mpsall))
+        self.assertEqual(set(), set(mps) - set(mpsall))
 
     def test_mountpoint(self):
         cases = (
@@ -87,7 +85,7 @@ class TestFS(unittest.TestCase):
 
         notall = k3fs.get_disk_partitions(all=False)
         self.assertTrue(len(rst) > len(notall))
-        self.assertEqual(set([]), set(notall) - set(rst))
+        self.assertEqual(set(), set(notall) - set(rst))
 
     def test_get_device(self):
         if is_ci():
@@ -146,7 +144,7 @@ class TestFS(unittest.TestCase):
 
         # check against df
 
-        rc, out, err = k3proc.shell_script("df -m / | tail -n1")
+        _rc, out, _err = k3proc.shell_script("df -m / | tail -n1")
         # Filesystem 1M-blocks   Used Available Capacity  iused    ifree %iused  Mounted on
         # /dev/disk1    475828 328021    147556    69% 84037441 37774557   69%   /
         dd('space of "/" from df')
@@ -253,7 +251,7 @@ class TestFS(unittest.TestCase):
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/makedirs_with_config.py " + fn,
-            env=dict(PYTHONPATH=this_base + ":" + os.environ.get("PYTHONPATH", ""), PATH=os.environ.get("PATH")),
+            env={"PYTHONPATH": this_base + ":" + os.environ.get("PYTHONPATH", ""), "PATH": os.environ.get("PATH")},
         )
 
         dd("run makedirs_with_config.py: ", rc, out, err)
@@ -298,7 +296,7 @@ class TestFS(unittest.TestCase):
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/write_with_config.py " + fn,
-            env=dict(PYTHONPATH=this_base + ":" + os.environ.get("PYTHONPATH", "")),
+            env={"PYTHONPATH": this_base + ":" + os.environ.get("PYTHONPATH", "")},
         )
 
         dd("run write_with_config.py: ", rc, out, err)
@@ -668,10 +666,7 @@ class TestFS(unittest.TestCase):
                     self.assertEqual(
                         exp_checksums[k],
                         checksums[k],
-                        "except: {exp}, actuality: {act}".format(
-                            exp=exp_checksums[k],
-                            act=checksums[k],
-                        ),
+                        f"except: {exp_checksums[k]}, actuality: {checksums[k]}",
                     )
 
             if min_time is not None:
@@ -683,12 +678,12 @@ class TestFS(unittest.TestCase):
 def force_remove(fn):
     try:
         os.rmdir(fn)
-    except BaseException:
+    except OSError:
         pass
 
     try:
         os.unlink(fn)
-    except BaseException:
+    except OSError:
         pass
 
 
