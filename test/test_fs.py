@@ -259,6 +259,23 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("2,3", out, "uid,gid is defined in test/pykitconfig.py")
 
+    def test_makedirs_with_root_ids(self):
+        # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
+        fn = "/tmp/pykit-ut-k3fs-foo"
+        force_remove(fn)
+
+        rc, out, err = k3proc.shell_script(
+            pyt + " " + this_base + "/makedirs_with_config.py " + fn + " 0 0",
+            env={"PYTHONPATH": this_base + ":" + os.environ.get("PYTHONPATH", ""), "PATH": os.environ.get("PATH")},
+        )
+
+        dd("run makedirs_with_config.py: ", rc, out, err)
+
+        self.assertEqual(0, rc, "normal exit")
+        self.assertEqual("0,0", out)
+
+        force_remove(fn)
+
     def test_read_write_file(self):
         fn = "/tmp/pykit-ut-rw-file"
         force_remove(fn)
@@ -303,6 +320,23 @@ class TestFS(unittest.TestCase):
 
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("2,3", out, "uid,gid is defined in test/pykitconfig.py")
+
+        force_remove(fn)
+
+    def test_write_file_with_root_ids(self):
+        # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
+        fn = "/tmp/pykit-ut-k3fs-foo"
+        force_remove(fn)
+
+        rc, out, err = k3proc.shell_script(
+            pyt + " " + this_base + "/write_with_config.py " + fn + " 0 0",
+            env={"PYTHONPATH": this_base + ":" + os.environ.get("PYTHONPATH", "")},
+        )
+
+        dd("run write_with_config.py: ", rc, out, err)
+
+        self.assertEqual(0, rc, "normal exit")
+        self.assertEqual("0,0", out)
 
         force_remove(fn)
 

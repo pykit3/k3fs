@@ -229,8 +229,12 @@ def makedirs(*paths, **kwargs):
     """
 
     mode = kwargs.get("mode", 0o755)
-    uid = kwargs.get("uid") or k3confloader.conf.uid
-    gid = kwargs.get("gid") or k3confloader.conf.gid
+    uid = kwargs.get("uid")
+    if uid is None:
+        uid = k3confloader.conf.uid
+    gid = kwargs.get("gid")
+    if gid is None:
+        gid = k3confloader.conf.gid
 
     path = os.path.join(*paths)
     last_err = None
@@ -378,8 +382,10 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
 
 
 def _write_file(path, fcont, uid=None, gid=None, fsync=True):
-    uid = uid or k3confloader.conf.uid
-    gid = gid or k3confloader.conf.gid
+    if uid is None:
+        uid = k3confloader.conf.uid
+    if gid is None:
+        gid = k3confloader.conf.gid
 
     with open(path, "w") as f:
         f.write(fcont)
