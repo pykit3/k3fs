@@ -265,11 +265,11 @@ def ls_dirs(*paths):
     Get sorted sub directories of `paths`.
 
     Args:
-        paths:
+        paths(str):
             is the directory path.
 
     Returns:
-        list: of all sub directory names.
+        (list[str]): the sorted names of all sub directories.
     """
 
     path = os.path.join(*paths)
@@ -298,7 +298,7 @@ def ls_files(*paths, pattern=".*"):
             is a regular expression that matches wanted file names.
 
     Returns:
-        list: of sorted file names.
+        (list[str]): the sorted names of the matching files.
     """
 
     path = os.path.join(*paths)
@@ -325,7 +325,7 @@ def fread(*paths, mode=""):
             If `mode=''` it returns a `str` decoded from `bytes`.
 
     Returns:
-        file content in string or bytes.
+        (str | bytes): the file content.
     """
     path = os.path.join(*paths)
     with open(path, "r" + mode) as f:
