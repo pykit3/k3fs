@@ -213,13 +213,13 @@ def makedirs(*paths, **kwargs):
     Keyword Args:
         mode(int):
             specifies permission mode for the dir created or existed.
-            By defaul it is `0755`.
+            By default it is `0755`.
 
         uid(int): specifies uid for the created dir.
             By default they are `None` and the created dir inherits ownership from the
             running python program.
 
-        gid(int): specifies uid for the created dir.
+        gid(int): specifies gid for the created dir.
             By default they are `None` and the created dir inherits ownership from the
             running python program.
 
@@ -347,7 +347,7 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
             specifies the group_id the file belongs to.
 
             By default they are `None`, which means the file that has been written
-            inheirts ownership of the running python script.
+            inherits ownership of the running python script.
 
         atomic(bool):
             atomically write fcont to the path.
