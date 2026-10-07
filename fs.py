@@ -206,11 +206,11 @@ def makedirs(*paths, **kwargs):
     If intermediate directory does not exist, create them too.
 
     Args:
-
-        paths:
+        paths(str):
             is a single part path such as `/tmp/foo` or a separated path such as
             `('/tmp', 'foo')`.
 
+    Keyword Args:
         mode(int):
             specifies permission mode for the dir created or existed.
             By defaul it is `0755`.
@@ -290,8 +290,7 @@ def ls_files(*paths, pattern=".*"):
     List all files that match `pattern` in `path`.
 
     Args:
-
-        paths:
+        paths(str):
             is a directory path.
 
         pattern(str):
@@ -316,8 +315,7 @@ def fread(*paths, mode=""):
     Read and return the entire file specified by `path`
 
     Args:
-
-        paths:
+        paths(str):
             is the path of the file to read.
 
         mode(str):
@@ -336,17 +334,16 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     """
     Write `fcont` into file `path`.
 
-    Args
-
-        paths_content:
+    Args:
+        paths_content(str):
             is the file path to write to and the content to write.
             The last elt is content, e.g.:
             `fwrite('/tmp', 'foo', 'bar')` write 'bar' into file '/tmp/foo'.
 
-        uid:
+        uid(int):
             specifies the user_id the file belongs to.
 
-        gid:
+        gid(int):
             specifies the group_id the file belongs to.
 
             By default they are `None`, which means the file that has been written
@@ -402,8 +399,7 @@ def remove(*paths, onerror=None):
     Recursively delete `path`, the `path` is *file*, *directory* or *symbolic link*.
 
     Args:
-
-        paths:
+        paths(str):
             is the path to remove.
 
         onerror(str or callable):
