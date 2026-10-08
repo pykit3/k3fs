@@ -1,6 +1,8 @@
 import os
+import stat
 import time
 import unittest
+from unittest import mock
 
 import k3num
 import k3proc
@@ -351,7 +353,10 @@ class TestFS(unittest.TestCase):
         os_fsync = os.fsync
 
         def _wait_fsync(fildes):
-            time.sleep(3)
+            # Only file content syncs take time; a directory sync would shift the timelines below.
+            is_dir = stat.S_ISDIR(os.fstat(fildes).st_mode)
+            if not is_dir:
+                time.sleep(3)
 
             os_fsync(fildes)
 
@@ -705,6 +710,46 @@ class TestFS(unittest.TestCase):
 
             if min_time is not None:
                 self.assertTrue(min_time[0] < spend_time < min_time[1])
+
+        force_remove(fn)
+
+    def test_write_file_atomically_with_new_tmp_path(self):
+        fn = "/tmp/pykit-ut-k3fs-write-atomic-tmp-path"
+        force_remove(fn)
+
+        renamed_from = []
+        os_rename = os.rename
+
+        def _record_rename(src, dst):
+            renamed_from.append(src)
+            os_rename(src, dst)
+
+        # Two writes at the same clock value must not share a temporary file.
+        with mock.patch.object(time, "time", return_value=1.0), mock.patch.object(os, "rename", _record_rename):
+            k3fs.fwrite(fn, "foo", atomic=True)
+            k3fs.fwrite(fn, "bar", atomic=True)
+
+        self.assertNotEqual(renamed_from[0], renamed_from[1])
+        self.assertEqual("bar", k3fs.fread(fn))
+
+        force_remove(fn)
+
+    def test_write_file_atomically_syncs_dir(self):
+        fn = "/tmp/pykit-ut-k3fs-write-atomic-sync-dir"
+        force_remove(fn)
+
+        synced_is_dir = []
+        os_fsync = os.fsync
+
+        def _record_fsync(fildes):
+            synced_is_dir.append(stat.S_ISDIR(os.fstat(fildes).st_mode))
+            os_fsync(fildes)
+
+        with mock.patch.object(os, "fsync", _record_fsync):
+            k3fs.fwrite(fn, "foo", atomic=True)
+
+        # The file content first, then the directory entry the rename created.
+        self.assertEqual([False, True], synced_is_dir)
 
         force_remove(fn)
 

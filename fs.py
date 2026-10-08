@@ -3,6 +3,7 @@ import errno
 import hashlib
 import os
 import re
+import secrets
 import sys
 import time
 
@@ -352,14 +353,12 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
         atomic(bool):
             atomically write fcont to the path.
 
-            Write fcont to a temporary file, then rename to the path.
-            The temporary file names of same path in one process distinguish with
-            nanosecond, it is not atomic if the temporary files of same path
-            created at the same nanosecond.
+            Write fcont to a new temporary file with a random name, then rename to the path.
             The renaming will be an atomic operation (this is a POSIX requirement).
 
         fsync(bool):
             specify if need to synchronize data to storage device.
+            With `atomic`, the directory is synchronized too, so a crash does not lose the renaming.
 
     """
 
@@ -368,8 +367,9 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
     if not atomic:
         return _write_file(path, fcont, uid, gid, fsync)
 
-    tmp_path = f"{path}._tmp_.{os.getpid()}_{int(time.time() * (1000**3))}"
-    _write_file(tmp_path, fcont, uid, gid, fsync)
+    tmp_path = f"{path}._tmp_.{os.getpid()}_{secrets.token_hex(8)}"
+    # "x" refuses an existing path, so the write never follows a file or link placed there.
+    _write_file(tmp_path, fcont, uid, gid, fsync, open_mode="x")
 
     try:
         os.rename(tmp_path, path)
@@ -377,14 +377,22 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
         os.remove(tmp_path)
         raise
 
+    if fsync:
+        dir_path = os.path.dirname(path) or "."
+        dir_fd = os.open(dir_path, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
 
-def _write_file(path, fcont, uid=None, gid=None, fsync=True):
+
+def _write_file(path, fcont, uid=None, gid=None, fsync=True, open_mode="w"):
     if uid is None:
         uid = k3confloader.conf.uid
     if gid is None:
         gid = k3confloader.conf.gid
 
-    with open(path, "w") as f:
+    with open(path, open_mode) as f:
         f.write(fcont)
         f.flush()
         if fsync:
