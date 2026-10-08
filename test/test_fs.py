@@ -1,4 +1,5 @@
 import os
+import secrets
 import stat
 import time
 import unittest
@@ -752,6 +753,31 @@ class TestFS(unittest.TestCase):
         self.assertEqual([False, True], synced_is_dir)
 
         force_remove(fn)
+
+    def test_write_file_atomically_removes_tmp_file_on_error(self):
+        dir_path = "/tmp/pykit-ut-k3fs-write-atomic-error"
+        force_remove(dir_path)
+        os.mkdir(dir_path)
+
+        # A text file refuses bytes after open() has created the temporary file.
+        with self.assertRaises(TypeError):
+            k3fs.fwrite(dir_path, "foo", b"bytes", atomic=True)
+
+        self.assertEqual([], os.listdir(dir_path))
+
+        force_remove(dir_path)
+
+    def test_write_file_atomically_keeps_existing_tmp_path(self):
+        fn = "/tmp/pykit-ut-k3fs-write-atomic-existing-tmp"
+        tmp_path = f"{fn}._tmp_.{os.getpid()}_fixed"
+        k3fs.fwrite(tmp_path, "not ours")
+
+        with mock.patch.object(secrets, "token_hex", return_value="fixed"), self.assertRaises(FileExistsError):
+            k3fs.fwrite(fn, "foo", atomic=True)
+
+        self.assertEqual("not ours", k3fs.fread(tmp_path))
+
+        force_remove(tmp_path)
 
 
 def force_remove(fn):

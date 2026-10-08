@@ -369,7 +369,16 @@ def fwrite(*paths_content, uid=None, gid=None, atomic=False, fsync=True):
 
     tmp_path = f"{path}._tmp_.{os.getpid()}_{secrets.token_hex(8)}"
     # "x" refuses an existing path, so the write never follows a file or link placed there.
-    _write_file(tmp_path, fcont, uid, gid, fsync, open_mode="x")
+    try:
+        _write_file(tmp_path, fcont, uid, gid, fsync, open_mode="x")
+    except FileExistsError:
+        # The path existed before this call, so the file there is not ours to remove.
+        raise
+    except BaseException:
+        # Other errors from open() come before it creates the file.
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
 
     try:
         os.rename(tmp_path, path)
