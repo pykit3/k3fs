@@ -8,7 +8,6 @@ import sys
 import time
 
 import k3confloader
-import psutil
 
 READ_BLOCK = 32 * 1024 * 1024
 WRITE_BLOCK = 32 * 1024 * 1024
@@ -40,6 +39,9 @@ def get_all_mountpoint(all=False):
     :return: By default it is `False` thus only disk drive mount points are returned.
     `tmpfs` or `/proc` are not returned by default.
     """
+    # psutil takes about 10 ms to import, so only its users load it
+    import psutil
+
     partitions = psutil.disk_partitions(all=all)
     prt_by_mp = [x.mountpoint for x in partitions]
     return prt_by_mp
@@ -116,6 +118,9 @@ def get_disk_partitions(all=True):
     #              'mountpoint': '/net',
     #              'opts': 'rw,nosuid,dontbrowse,automounted,multilabel'}
     # }
+    # psutil takes about 10 ms to import, so only its users load it
+    import psutil
+
     partitions = psutil.disk_partitions(all=all)
 
     by_mount_point = {}
