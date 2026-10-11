@@ -157,7 +157,7 @@ def get_path_usage(path):
         'total':     total space in byte,
         'used':      used space in byte(includes space reserved for super user),
         'available': total - used,
-        'percent':   float(used) / 'total',
+        'percent':   float(used) / 'total', or 0.0 when 'total' is 0,
     }
     """
     space_st = os.statvfs(path)
@@ -169,11 +169,17 @@ def get_path_usage(path):
     capa = space_st.f_frsize * space_st.f_blocks
     used = capa - avail
 
+    # A pseudo filesystem such as /proc reports no blocks at all
+    if capa == 0:
+        percent = 0.0
+    else:
+        percent = float(used) / capa
+
     return {
         "total": capa,
         "used": used,
         "available": avail,
-        "percent": float(used) / capa,
+        "percent": percent,
     }
 
 
@@ -189,7 +195,7 @@ def get_path_inode_usage(path):
     #     'total':     total number of inode,
     # 'used':      used inode(includes inode reserved for super user),
     # 'available': total - used,
-    #              'percent':   float(used) / 'total'
+    #              'percent':   float(used) / 'total', or 0.0 when 'total' is 0
     # }
     # ```
     inode_st = os.statvfs(path)
@@ -198,11 +204,17 @@ def get_path_inode_usage(path):
     total = inode_st.f_files
     used = total - available
 
+    # A filesystem without a fixed inode table, such as btrfs, reports no inodes
+    if total == 0:
+        percent = 0.0
+    else:
+        percent = float(used) / total
+
     return {
         "total": total,
         "used": used,
         "available": available,
-        "percent": float(used) / total,
+        "percent": percent,
     }
 
 

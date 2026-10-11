@@ -172,6 +172,17 @@ class TestFS(unittest.TestCase):
         total = inode_st["used"] + inode_st["available"]
         self.assertEqual(inode_st["total"], total)
 
+    def test_get_path_usage_zero_capacity(self):
+        # /proc on Linux reports no blocks and no inodes.
+        st = os.statvfs_result((4096, 4096, 0, 0, 0, 0, 0, 0, 0, 255))
+        with mock.patch.object(os, "statvfs", return_value=st):
+            usage = k3fs.get_path_usage("/proc")
+            inode_usage = k3fs.get_path_inode_usage("/proc")
+
+        zero_usage = {"total": 0, "used": 0, "available": 0, "percent": 0.0}
+        self.assertEqual(zero_usage, usage)
+        self.assertEqual(zero_usage, inode_usage)
+
     def test_makedirs(self):
         fn = "/tmp/pykit-ut-k3fs-foo"
         fn_part = ("/tmp", "pykit-ut-k3fs-foo")
