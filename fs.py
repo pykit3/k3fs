@@ -513,8 +513,6 @@ def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False, block
     if io_limit == 0:
         raise FSUtilError("io_limit shoud not be zero")
 
-    min_io_time = float(block_size) / io_limit
-
     sum_sha1 = hashlib.sha1()
     sum_md5 = hashlib.md5()
     sum_crc32 = 0
@@ -522,14 +520,15 @@ def calc_checksums(path, sha1=False, md5=False, crc32=False, sha256=False, block
 
     with open(path, "rb") as f_path:
         while True:
-            t0 = time.time()
+            t0 = time.monotonic()
 
             buf = f_path.read(block_size)
             if len(buf) == 0:
                 break
 
-            t1 = time.time()
+            t1 = time.monotonic()
 
+            min_io_time = float(len(buf)) / io_limit
             time_sleep = max(0, min_io_time - (t1 - t0))
             if time_sleep > 0:
                 time.sleep(time_sleep)

@@ -750,6 +750,20 @@ class TestFS(unittest.TestCase):
 
         force_remove(fn)
 
+    def test_calc_checksums_short_read(self):
+        # A read shorter than block_size waits only for the bytes it returned.
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "short")
+        k3fs.fwrite(fn, "!" * 10)
+
+        slept = []
+        with mock.patch.object(time, "monotonic", return_value=0.0), mock.patch.object(time, "sleep", slept.append):
+            k3fs.calc_checksums(fn, sha1=True, block_size=1024, io_limit=1024)
+
+        self.assertEqual([10 / 1024], slept)
+
+        k3fs.remove(tmp)
+
     def test_write_file_atomically_with_new_tmp_path(self):
         fn = "/tmp/pykit-ut-k3fs-write-atomic-tmp-path"
         force_remove(fn)
