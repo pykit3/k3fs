@@ -184,11 +184,10 @@ class TestFS(unittest.TestCase):
         self.assertEqual(zero_usage, inode_usage)
 
     def test_makedirs(self):
-        fn = "/tmp/pykit-ut-k3fs-foo"
-        fn_part = ("/tmp", "pykit-ut-k3fs-foo")
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
+        fn_part = (tmp, "pykit-ut-k3fs-foo")
         dd("fn_part:", fn_part)
-
-        force_remove(fn)
 
         dd("file is not a dir")
         with open(fn, "w") as f:
@@ -226,6 +225,8 @@ class TestFS(unittest.TestCase):
         # self.assertRaises(PermissionError, k3fs.makedirs, fn, uid=1, gid=1)
         k3fs.makedirs(fn, uid=1, gid=1)
 
+        k3fs.remove(tmp)
+
     def test_ls_dirs(self):
         k3fs.makedirs("test_dir/sub_dir1/foo")
         k3fs.makedirs("test_dir/sub_dir2")
@@ -261,8 +262,8 @@ class TestFS(unittest.TestCase):
         k3fs.remove("test_dir")
 
     def test_makedirs_with_config(self):
-        fn = "/tmp/pykit-ut-k3fs-foo"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/makedirs_with_config.py " + fn,
@@ -274,10 +275,12 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("2,3", out, "uid,gid is defined in test/pykitconfig.py")
 
+        k3fs.remove(tmp)
+
     def test_makedirs_with_root_ids(self):
         # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
-        fn = "/tmp/pykit-ut-k3fs-foo"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/makedirs_with_config.py " + fn + " 0 0",
@@ -289,22 +292,22 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("0,0", out)
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_read_write_file(self):
-        fn = "/tmp/pykit-ut-rw-file"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-rw-file")
 
         dd("write/read file")
         k3fs.fwrite(fn, "bar")
         self.assertEqual("bar", k3fs.fread(fn))
 
         # write with multi path segment
-        k3fs.fwrite("/tmp", "pykit-ut-rw-file", "123")
+        k3fs.fwrite(tmp, "pykit-ut-rw-file", "123")
         self.assertEqual("123", k3fs.fread(fn))
 
         # read with multi path segment
-        self.assertEqual("123", k3fs.fread("/tmp", "pykit-ut-rw-file"))
+        self.assertEqual("123", k3fs.fread(tmp, "pykit-ut-rw-file"))
 
         self.assertEqual(b"123", k3fs.fread(fn, mode="b"))
 
@@ -320,11 +323,11 @@ class TestFS(unittest.TestCase):
         self.assertEqual(1, stat.st_uid)
         self.assertEqual(1, stat.st_gid)
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_write_file_with_config(self):
-        fn = "/tmp/pykit-ut-k3fs-foo"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/write_with_config.py " + fn,
@@ -336,12 +339,12 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("2,3", out, "uid,gid is defined in test/pykitconfig.py")
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_write_file_with_root_ids(self):
         # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
-        fn = "/tmp/pykit-ut-k3fs-foo"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
 
         rc, out, err = k3proc.shell_script(
             pyt + " " + this_base + "/write_with_config.py " + fn + " 0 0",
@@ -353,10 +356,11 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0, rc, "normal exit")
         self.assertEqual("0,0", out)
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_write_file_atomically(self):
-        fn = "/tmp/pykit-ut-k3fs-write-atomic"
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-write-atomic")
 
         dd("atomically write file")
 
@@ -424,12 +428,12 @@ class TestFS(unittest.TestCase):
         self.assertTrue(assert_ok["ok"])
 
         os.fsync = os_fsync
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_remove_normal_file(self):
         f = "pykit-ut-k3fs-remove-file-normal"
-        fn = "/tmp/" + f
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, f)
 
         k3fs.fwrite(fn, "", atomic=True)
         self.assertTrue(os.path.isfile(fn))
@@ -437,22 +441,23 @@ class TestFS(unittest.TestCase):
         k3fs.remove(fn)
         self.assertFalse(os.path.exists(fn))
 
-        k3fs.fwrite("/tmp", f, "", atomic=True)
+        k3fs.fwrite(tmp, f, "", atomic=True)
         self.assertTrue(os.path.isfile(fn))
 
         # remove with multi path segments
-        k3fs.remove("/tmp", f)
+        k3fs.remove(tmp, f)
         self.assertFalse(os.path.exists(fn))
 
+        k3fs.remove(tmp)
+
     def test_remove_link_file(self):
-        src_fn = "/tmp/pykit-ut-k3fs-remove-file-normal"
-        force_remove(src_fn)
+        tmp = tempfile.mkdtemp()
+        src_fn = os.path.join(tmp, "pykit-ut-k3fs-remove-file-normal")
 
         k3fs.fwrite(src_fn, "", atomic=True)
         self.assertTrue(os.path.isfile(src_fn))
 
-        link_fn = "/tmp/pykit-ut-k3fs-remove-file-link"
-        force_remove(link_fn)
+        link_fn = os.path.join(tmp, "pykit-ut-k3fs-remove-file-link")
 
         os.link(src_fn, link_fn)
         self.assertTrue(os.path.isfile(link_fn))
@@ -460,8 +465,7 @@ class TestFS(unittest.TestCase):
         k3fs.remove(link_fn)
         self.assertFalse(os.path.exists(link_fn))
 
-        symlink_fn = "/tmp/pykit-ut-k3fs-remove-file-symlink"
-        force_remove(symlink_fn)
+        symlink_fn = os.path.join(tmp, "pykit-ut-k3fs-remove-file-symlink")
 
         os.symlink(src_fn, symlink_fn)
         self.assertTrue(os.path.islink(symlink_fn))
@@ -469,10 +473,11 @@ class TestFS(unittest.TestCase):
         k3fs.remove(symlink_fn)
         self.assertFalse(os.path.exists(symlink_fn))
 
-        force_remove(src_fn)
+        k3fs.remove(tmp)
 
     def test_remove_dir(self):
-        dirname = "/tmp/pykit-ut-k3fs-remove-dir"
+        tmp = tempfile.mkdtemp()
+        dirname = os.path.join(tmp, "pykit-ut-k3fs-remove-dir")
 
         k3fs.makedirs(dirname)
         self.assertTrue(os.path.isdir(dirname))
@@ -498,8 +503,11 @@ class TestFS(unittest.TestCase):
         k3fs.remove(dirname)
         self.assertFalse(os.path.exists(dirname))
 
+        k3fs.remove(tmp)
+
     def test_remove_dir_with_link(self):
-        dirname = "/tmp/pykit-ut-k3fs-remove-dir"
+        tmp = tempfile.mkdtemp()
+        dirname = os.path.join(tmp, "pykit-ut-k3fs-remove-dir")
 
         k3fs.makedirs(dirname)
         self.assertTrue(os.path.isdir(dirname))
@@ -524,6 +532,8 @@ class TestFS(unittest.TestCase):
 
         k3fs.remove(dirname)
         self.assertFalse(os.path.exists(dirname))
+
+        k3fs.remove(tmp)
 
     def test_remove_dir_symlink(self):
         # A symlink to a directory is removed as a link, and the files it points to stay.
@@ -550,9 +560,8 @@ class TestFS(unittest.TestCase):
         k3fs.remove(tmp)
 
     def test_remove_error(self):
-        dirname = "/tmp/pykit-ut-k3fs-remove-on-error"
-        if os.path.isdir(dirname):
-            k3fs.remove(dirname)
+        tmp = tempfile.mkdtemp()
+        dirname = os.path.join(tmp, "pykit-ut-k3fs-remove-on-error")
 
         # OSError
         self.assertRaises(os.error, k3fs.remove, dirname, onerror="raise")
@@ -569,11 +578,13 @@ class TestFS(unittest.TestCase):
         # on error
         k3fs.remove(dirname, onerror=assert_error(os.remove))
 
+        k3fs.remove(tmp)
+
     def test_calc_checksums(self):
         M = 1024**2
 
-        fn = "/tmp/pykit-ut-fsutil-calc_checksums"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-fsutil-calc_checksums")
 
         cases = (
             (
@@ -748,7 +759,7 @@ class TestFS(unittest.TestCase):
             if min_time is not None:
                 self.assertTrue(min_time[0] < spend_time < min_time[1])
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_calc_checksums_short_read(self):
         # A read shorter than block_size waits only for the bytes it returned.
@@ -765,8 +776,8 @@ class TestFS(unittest.TestCase):
         k3fs.remove(tmp)
 
     def test_write_file_atomically_with_new_tmp_path(self):
-        fn = "/tmp/pykit-ut-k3fs-write-atomic-tmp-path"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-write-atomic-tmp-path")
 
         renamed_from = []
         os_rename = os.rename
@@ -783,11 +794,11 @@ class TestFS(unittest.TestCase):
         self.assertNotEqual(renamed_from[0], renamed_from[1])
         self.assertEqual("bar", k3fs.fread(fn))
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_write_file_atomically_syncs_dir(self):
-        fn = "/tmp/pykit-ut-k3fs-write-atomic-sync-dir"
-        force_remove(fn)
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-write-atomic-sync-dir")
 
         synced_is_dir = []
         os_fsync = os.fsync
@@ -802,12 +813,10 @@ class TestFS(unittest.TestCase):
         # The file content first, then the directory entry the rename created.
         self.assertEqual([False, True], synced_is_dir)
 
-        force_remove(fn)
+        k3fs.remove(tmp)
 
     def test_write_file_atomically_removes_tmp_file_on_error(self):
-        dir_path = "/tmp/pykit-ut-k3fs-write-atomic-error"
-        force_remove(dir_path)
-        os.mkdir(dir_path)
+        dir_path = tempfile.mkdtemp()
 
         # A text file refuses bytes after open() has created the temporary file.
         with self.assertRaises(TypeError):
@@ -818,7 +827,8 @@ class TestFS(unittest.TestCase):
         force_remove(dir_path)
 
     def test_write_file_atomically_keeps_existing_tmp_path(self):
-        fn = "/tmp/pykit-ut-k3fs-write-atomic-existing-tmp"
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-write-atomic-existing-tmp")
         tmp_path = f"{fn}._tmp_.{os.getpid()}_fixed"
         k3fs.fwrite(tmp_path, "not ours")
 
@@ -827,7 +837,7 @@ class TestFS(unittest.TestCase):
 
         self.assertEqual("not ours", k3fs.fread(tmp_path))
 
-        force_remove(tmp_path)
+        k3fs.remove(tmp)
 
 
 def force_remove(fn):
