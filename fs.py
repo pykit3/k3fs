@@ -439,7 +439,8 @@ def remove(*paths, onerror=None):
         onerror = "raise"
 
     try:
-        is_dir = os.path.isdir(path)
+        # A symlink to a directory is removed as a link: following it would delete the files it points to.
+        is_dir = os.path.isdir(path) and not os.path.islink(path)
     except OSError:
         if onerror == "raise":
             raise

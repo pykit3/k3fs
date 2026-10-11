@@ -1,6 +1,7 @@
 import os
 import secrets
 import stat
+import tempfile
 import time
 import unittest
 from unittest import mock
@@ -512,6 +513,30 @@ class TestFS(unittest.TestCase):
 
         k3fs.remove(dirname)
         self.assertFalse(os.path.exists(dirname))
+
+    def test_remove_dir_symlink(self):
+        # A symlink to a directory is removed as a link, and the files it points to stay.
+        tmp = tempfile.mkdtemp()
+        target = os.path.join(tmp, "target")
+        target_file = os.path.join(target, "f")
+        k3fs.makedirs(target)
+        k3fs.fwrite(target_file, "content")
+
+        link = os.path.join(tmp, "link")
+        os.symlink(target, link)
+        k3fs.remove(link)
+        self.assertFalse(os.path.lexists(link))
+        self.assertEqual("content", k3fs.fread(target_file))
+
+        # a directory that holds a symlink to a directory outside of it
+        dirname = os.path.join(tmp, "dir")
+        k3fs.makedirs(dirname)
+        os.symlink(target, os.path.join(dirname, "link"))
+        k3fs.remove(dirname)
+        self.assertFalse(os.path.lexists(dirname))
+        self.assertEqual("content", k3fs.fread(target_file))
+
+        k3fs.remove(tmp)
 
     def test_remove_error(self):
         dirname = "/tmp/pykit-ut-k3fs-remove-on-error"
