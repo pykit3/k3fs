@@ -54,9 +54,13 @@ def get_mountpoint(path):
     :param path: is a path that does have to be an existent file path.
     :return: the mount point path(one of output of command `mount` on linux)
     """
-    path = os.path.realpath(path)
-
     prt_by_mountpoint = get_disk_partitions()
+
+    return _find_mountpoint(path, prt_by_mountpoint)
+
+
+def _find_mountpoint(path, prt_by_mountpoint):
+    path = os.path.realpath(path)
 
     while path != "/" and path not in prt_by_mountpoint:
         path = os.path.dirname(path)
@@ -73,7 +77,7 @@ def get_device(path):
 
     prt_by_mountpoint = get_disk_partitions()
 
-    mp = get_mountpoint(path)
+    mp = _find_mountpoint(path, prt_by_mountpoint)
 
     return prt_by_mountpoint[mp]["device"]
 
@@ -141,8 +145,8 @@ def get_path_fs(path):
     :param path: is a file path on a file system.
     :return: the file-system name, such as `ext4` or `hfs`.
     """
-    mp = get_mountpoint(path)
     prt_by_mp = get_disk_partitions()
+    mp = _find_mountpoint(path, prt_by_mp)
 
     return prt_by_mp[mp]["fstype"]
 
