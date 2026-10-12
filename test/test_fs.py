@@ -91,6 +91,15 @@ class TestFS(unittest.TestCase):
         self.assertTrue(len(rst) > len(notall))
         self.assertEqual(set(), set(notall) - set(rst))
 
+    def test_is_ci(self):
+        with mock.patch.dict(os.environ, {"CI": "true"}):
+            in_ci = is_ci()
+        with mock.patch.dict(os.environ, clear=True):
+            outside_ci = is_ci()
+
+        self.assertTrue(in_ci)
+        self.assertFalse(outside_ci)
+
     def test_get_device(self):
         if is_ci():
             return
@@ -111,7 +120,7 @@ class TestFS(unittest.TestCase):
         dev = out.strip()
         dd("device: ", dev)
         rst = k3fs.get_device_fs(dev)
-        self.assertIn(rst, ("hfs", "xfs", "ext2", "ext3", "ext4"))
+        self.assertIn(rst, ("apfs", "hfs", "xfs", "ext2", "ext3", "ext4"))
 
     def test_get_path_fs(self):
         rst = k3fs.get_path_fs("/dev")
@@ -860,4 +869,4 @@ def get_mode(fn):
 
 def is_ci():
     # github ci
-    return os.environ.get("CI", "") is not None
+    return "CI" in os.environ
