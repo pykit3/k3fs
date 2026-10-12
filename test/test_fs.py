@@ -130,7 +130,7 @@ class TestFS(unittest.TestCase):
 
         rst = k3fs.get_path_fs("/blabla")
         dd("fs of /blabla: ", rst)
-        self.assertIn(rst, ("hfs", "xfs", "ext2", "ext3", "ext4"))
+        self.assertIn(rst, ("apfs", "hfs", "xfs", "ext2", "ext3", "ext4"))
 
     def test_get_path_usage(self):
         path = "/"
