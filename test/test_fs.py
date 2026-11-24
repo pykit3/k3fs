@@ -10,6 +10,7 @@ import k3num
 import k3proc
 import k3thread
 import k3ut
+import psutil
 
 import k3fs
 
@@ -20,6 +21,9 @@ this_base = os.path.dirname(__file__)
 
 pyt = "python"
 
+# Only root can give a file to another user. CI runs the tests as root, and so does `make sudo_test`.
+requires_root = unittest.skipIf(os.geteuid() != 0, "changing the owner of a file needs root")
+
 
 class TestFS(unittest.TestCase):
     def test_exceptions(self):
@@ -29,11 +33,12 @@ class TestFS(unittest.TestCase):
     def test_get_all_mountpoint(self):
         mps = k3fs.get_all_mountpoint()
         dd("mount points:", mps)
-        self.assertIn("/", mps)
 
         mpsall = k3fs.get_all_mountpoint(all=True)
-        dd("all mount points:", mps)
+        dd("all mount points:", mpsall)
 
+        # In a container or a chroot "/" can be an overlay or bind mount, which is not a disk partition.
+        self.assertIn("/", mpsall)
         self.assertTrue(len(mpsall) > len(mps))
         self.assertEqual(set(), set(mps) - set(mpsall))
 
@@ -123,14 +128,18 @@ class TestFS(unittest.TestCase):
         self.assertIn(rst, ("apfs", "hfs", "xfs", "ext2", "ext3", "ext4"))
 
     def test_get_path_fs(self):
+        # The file system types depend on the host: "/" is overlay in a container, and "/dev" is tmpfs in a chroot.
+        # So the expected type of a mount point is the one psutil reports.
+        fstypes = {p.mountpoint: p.fstype for p in psutil.disk_partitions(all=True)}
+        dd("fs types:", fstypes)
+
         rst = k3fs.get_path_fs("/dev")
         dd("fs of /dev: ", rst)
-        self.assertNotEqual("unknown", rst)
-        self.assertTrue("dev" in rst)
+        self.assertEqual(fstypes["/dev"], rst)
 
         rst = k3fs.get_path_fs("/blabla")
         dd("fs of /blabla: ", rst)
-        self.assertIn(rst, ("apfs", "hfs", "xfs", "ext2", "ext3", "ext4"))
+        self.assertEqual(fstypes["/"], rst)
 
     def test_get_path_usage(self):
         path = "/"
@@ -229,10 +238,17 @@ class TestFS(unittest.TestCase):
         self.assertEqual(0o700, get_mode(fn))
         os.rmdir(fn)
 
-        dd("specify uid/gid, to change uid, you need root privilege")
-        # dd('changing uid/gid works if it raises error')
-        # self.assertRaises(PermissionError, k3fs.makedirs, fn, uid=1, gid=1)
+        k3fs.remove(tmp)
+
+    @requires_root
+    def test_makedirs_with_ids(self):
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
+
         k3fs.makedirs(fn, uid=1, gid=1)
+        st = os.stat(fn)
+        self.assertEqual(1, st.st_uid)
+        self.assertEqual(1, st.st_gid)
 
         k3fs.remove(tmp)
 
@@ -270,6 +286,7 @@ class TestFS(unittest.TestCase):
 
         k3fs.remove("test_dir")
 
+    @requires_root
     def test_makedirs_with_config(self):
         tmp = tempfile.mkdtemp()
         fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
@@ -286,6 +303,7 @@ class TestFS(unittest.TestCase):
 
         k3fs.remove(tmp)
 
+    @requires_root
     def test_makedirs_with_root_ids(self):
         # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
         tmp = tempfile.mkdtemp()
@@ -326,14 +344,21 @@ class TestFS(unittest.TestCase):
         k3fs.fwrite(fn, cont)
         self.assertEqual(cont, k3fs.fread(fn))
 
-        dd("write file with uid/gid")
+        k3fs.remove(tmp)
+
+    @requires_root
+    def test_write_file_with_ids(self):
+        tmp = tempfile.mkdtemp()
+        fn = os.path.join(tmp, "pykit-ut-rw-file")
+
         k3fs.fwrite(fn, "1", uid=1, gid=1)
-        stat = os.stat(fn)
-        self.assertEqual(1, stat.st_uid)
-        self.assertEqual(1, stat.st_gid)
+        st = os.stat(fn)
+        self.assertEqual(1, st.st_uid)
+        self.assertEqual(1, st.st_gid)
 
         k3fs.remove(tmp)
 
+    @requires_root
     def test_write_file_with_config(self):
         tmp = tempfile.mkdtemp()
         fn = os.path.join(tmp, "pykit-ut-k3fs-foo")
@@ -350,6 +375,7 @@ class TestFS(unittest.TestCase):
 
         k3fs.remove(tmp)
 
+    @requires_root
     def test_write_file_with_root_ids(self):
         # test/k3conf.py sets uid 2 and gid 3, so ids of 0 taken as absent would give "2,3".
         tmp = tempfile.mkdtemp()
