@@ -96,18 +96,7 @@ class TestFS(unittest.TestCase):
         self.assertTrue(len(rst) > len(notall))
         self.assertEqual(set(), set(notall) - set(rst))
 
-    def test_is_ci(self):
-        with mock.patch.dict(os.environ, {"CI": "true"}):
-            in_ci = is_ci()
-        with mock.patch.dict(os.environ, clear=True):
-            outside_ci = is_ci()
-
-        self.assertTrue(in_ci)
-        self.assertFalse(outside_ci)
-
     def test_get_device(self):
-        if is_ci():
-            return
         rst = k3fs.get_device("/inexistent")
 
         # GNU "grep -o" split items into several lines
@@ -116,16 +105,17 @@ class TestFS(unittest.TestCase):
         self.assertEqual(root_dev, rst)
 
     def test_get_device_fs(self):
-        if is_ci():
-            return
-        # GNU "grep -o" split items into several lines
-        rc, out, err = k3proc.shell_script('mount | grep " on / " | grep -o "[^ ]*" | head -n1')
-        dd("find device on /", rc, out, err)
+        # In a container or a chroot "/" can be an overlay or tmpfs mount, not a disk partition.
+        # So the expected type is the one psutil reports for "/".
+        fstypes = {p.mountpoint: p.fstype for p in psutil.disk_partitions(all=True)}
+        dd("fs types:", fstypes)
 
-        dev = out.strip()
-        dd("device: ", dev)
+        dev = k3fs.get_device("/")
+        dd("device of /: ", dev)
+
         rst = k3fs.get_device_fs(dev)
-        self.assertIn(rst, ("apfs", "hfs", "xfs", "ext2", "ext3", "ext4"))
+        dd("fs of device: ", rst)
+        self.assertEqual(fstypes["/"], rst)
 
     def test_get_path_fs(self):
         # The file system types depend on the host: "/" is overlay in a container, and "/dev" is tmpfs in a chroot.
@@ -891,8 +881,3 @@ def get_mode(fn):
     mode = os.stat(fn).st_mode
     dd("mode read:", oct(mode))
     return mode & 0o777
-
-
-def is_ci():
-    # github ci
-    return "CI" in os.environ
